@@ -26,7 +26,7 @@ export default class Sqlite extends Handler {
    */
   async init(): Promise<void> {
     this.connectionPool = await new Promise((res, rej) => {
-      let temp = new sqlite.Database(this.config.database, err => {
+      const temp = new sqlite.Database(this.config.database, err => {
         if (err) rej(err);
       });
       res(temp);
@@ -52,8 +52,8 @@ export default class Sqlite extends Handler {
    */
   async initTransaction(conn: sqlite.Database): Promise<void> {
     await new Promise((res, rej) => {
-      conn.run('BEGIN TRANSACTION', (data: any, err: any) => {
-        if (err) rej(new Error(err));
+      conn.run('BEGIN TRANSACTION', (data: unknown, err: Error | null) => {
+        if (err) rej(err);
         else res(data);
       });
     });
@@ -68,8 +68,8 @@ export default class Sqlite extends Handler {
    */
   async commit(conn: sqlite.Database): Promise<void> {
     await new Promise((res, rej) => {
-      conn.run('COMMIT', (data: any, err: any) => {
-        if (err) rej(new Error(err));
+      conn.run('COMMIT', (data: unknown, err: Error | null) => {
+        if (err) rej(err);
         else res(data);
       });
     });
@@ -84,8 +84,8 @@ export default class Sqlite extends Handler {
    */
   async rollback(conn: sqlite.Database): Promise<void> {
     await new Promise((res, rej) => {
-      conn.run('ROLLBACK', (data: any, err: any) => {
-        if (err) rej(new Error(err));
+      conn.run('ROLLBACK', (data: unknown, err: Error | null) => {
+        if (err) rej(err);
         else res(data);
       });
     });
@@ -98,7 +98,8 @@ export default class Sqlite extends Handler {
    * @param {sqlite.Database} conn
    * @returns {Promise<void>}
    */
-  async close(conn: sqlite.Database): Promise<void> {
+  async close(): Promise<void> {
+    // conn: sqlite.Database
     // await new Promise<void>((res, rej) => {
     // 	conn.close((err: any) => {
     // 		if (err) rej(err);
@@ -112,14 +113,14 @@ export default class Sqlite extends Handler {
    *
    * @async
    * @param {string} query
-   * @param {?any[]} [dataArgs]
+   * @param {?unknown[]} [dataArgs]
    * @param {?sqlite.Database} [connection]
    * @returns {Promise<model.ResultSet>}
    */
-  async run(query: string, dataArgs?: any[], connection?: sqlite.Database): Promise<model.ResultSet> {
-    let conn = connection ?? this.connectionPool;
+  async run(query: string, dataArgs?: unknown[], connection?: sqlite.Database): Promise<model.ResultSet> {
+    const conn = connection ?? this.connectionPool;
 
-    let data: any[] = await new Promise((res, rej) => {
+    const data: unknown[] = await new Promise((res, rej) => {
       conn.all(query, dataArgs, function (err, r) {
         if (err) {
           rej(err);
@@ -129,7 +130,7 @@ export default class Sqlite extends Handler {
       });
     });
 
-    let result = new model.ResultSet();
+    const result = new model.ResultSet();
     result.rows = data;
     result.rowCount = data.length;
     return result;
@@ -143,7 +144,7 @@ export default class Sqlite extends Handler {
    * @returns {Promise<model.ResultSet>}
    */
   runStatement(queryStmt: sql.Statement | sql.Statement[], connection?: sqlite.Database): Promise<model.ResultSet> {
-    let { query, dataArgs } = this.prepareQuery(queryStmt);
+    const { query, dataArgs } = this.prepareQuery(queryStmt);
     return this.run(query, dataArgs, connection);
   }
 
@@ -152,22 +153,22 @@ export default class Sqlite extends Handler {
    *
    * @async
    * @param {string} query
-   * @param {?any[]} [dataArgs]
+   * @param {?unknown[]} [dataArgs]
    * @param {?sqlite.Database} [connection]
    * @returns {Promise<stream.Readable>}
    */
-  async stream(query: string, dataArgs?: any[], connection?: sqlite.Database): Promise<stream.Readable> {
-    let conn = connection ?? this.connectionPool;
+  async stream(query: string, dataArgs?: unknown[], connection?: sqlite.Database): Promise<stream.Readable> {
+    const conn = connection ?? this.connectionPool;
 
-    let dataStream = new stream.Duplex();
+    const dataStream = new stream.Duplex();
     conn.each(
       query,
       dataArgs,
-      (err, row: any) => {
+      (err, row: unknown) => {
         if (err) throw err;
         dataStream.write(row);
       },
-      (err, count) => {
+      err => {
         if (err) throw err;
         dataStream.write(null);
       }
@@ -183,7 +184,7 @@ export default class Sqlite extends Handler {
    * @returns {Promise<stream.Readable>}
    */
   streamStatement(queryStmt: sql.Statement | sql.Statement[], connection?: sqlite.Database): Promise<stream.Readable> {
-    let { query, dataArgs } = this.prepareQuery(queryStmt);
+    const { query, dataArgs } = this.prepareQuery(queryStmt);
     return this.stream(query, dataArgs, connection);
   }
 }
