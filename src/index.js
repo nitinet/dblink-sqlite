@@ -3,12 +3,10 @@ import sqlite from 'sqlite3';
 import stream from 'stream';
 export default class Sqlite extends Handler {
   connectionPool;
-  async init() {
-    this.connectionPool = await new Promise((res, rej) => {
-      const temp = new sqlite.Database(this.config.database, err => {
-        if (err) rej(err);
-      });
-      res(temp);
+  constructor(config) {
+    super(config);
+    this.connectionPool = new sqlite.Database(config, err => {
+      if (err) throw err;
     });
   }
   async getConnection() {
@@ -52,7 +50,6 @@ export default class Sqlite extends Handler {
     });
     const result = new model.ResultSet();
     result.rows = data;
-    result.rowCount = data.length;
     return result;
   }
   runStatement(queryStmt, connection) {

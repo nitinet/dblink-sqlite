@@ -19,17 +19,16 @@ export default class Sqlite extends Handler {
   connectionPool!: sqlite.Database;
 
   /**
-   * Handler initialisation
+   * Creates an instance of Mysql.
    *
-   * @async
-   * @returns {Promise<void>}
+   * @constructor
+   * @param {string} config
    */
-  async init(): Promise<void> {
-    this.connectionPool = await new Promise((res, rej) => {
-      const temp = new sqlite.Database(this.config.database, err => {
-        if (err) rej(err);
-      });
-      res(temp);
+  constructor(config: string) {
+    super(config);
+
+    this.connectionPool = new sqlite.Database(config, err => {
+      if (err) throw err;
     });
   }
 
@@ -120,19 +119,18 @@ export default class Sqlite extends Handler {
   async run(query: string, dataArgs?: unknown[], connection?: sqlite.Database): Promise<model.ResultSet> {
     const conn = connection ?? this.connectionPool;
 
-    const data: unknown[] = await new Promise((res, rej) => {
+    const data: Record<string, unknown>[] = await new Promise((res, rej) => {
       conn.all(query, dataArgs, function (err, r) {
         if (err) {
           rej(err);
         } else {
-          res(r);
+          res(r as Record<string, unknown>[]);
         }
       });
     });
 
     const result = new model.ResultSet();
     result.rows = data;
-    result.rowCount = data.length;
     return result;
   }
 
